@@ -1,0 +1,143 @@
+---
+title: "Z-Score Activity Draft"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+
+library(shiny)
+library(tidyverse)
+
+cohorts_field_of_study <- read_csv("Most-Recent-Cohorts-Field-of-Study.csv")
+institutions <- cohorts_field_of_study %>%
+  mutate(num_ind = ifelse(DEBT_ALL_PP_ANY_MEAN == "PrivacySuppressed", NA, as.numeric(DEBT_ALL_PP_ANY_MEAN))) %>% 
+  filter(CREDLEV == 3) %>% 
+  group_by(INSTNM) %>%
+  summarize(count = sum(!is.na(num_ind))) %>%
+  filter(count >= 10)
+
+majors <- cohorts_field_of_study %>%
+  mutate(num_ind = ifelse(DEBT_ALL_PP_ANY_MEAN == "PrivacySuppressed", NA, as.numeric(DEBT_ALL_PP_ANY_MEAN))) %>%
+  filter(CREDLEV == 3) %>%
+  group_by(CIPDESC) %>%
+  summarize(count = sum(!is.na(num_ind))) %>%
+  filter(count >= 10)
+# 
+cohorts_institutions <- cohorts_field_of_study %>%
+  select(INSTNM, CONTROL, CIPCODE, CIPDESC, CREDLEV, CREDDESC, starts_with("DEBT")) %>%
+  filter(INSTNM %in% institutions$INSTNM, CREDLEV == 3)
+# 
+cohorts_majors <- cohorts_field_of_study %>%
+  select(INSTNM, CONTROL, CIPCODE, CIPDESC, CREDLEV, CREDDESC, starts_with("DEBT")) %>%
+  filter(CIPDESC %in% majors$CIPDESC, CREDLEV == 3)
+
+variables_to_study <- c(
+  "Parent PLUS Loan Debt (all)" = "ALL_PP_ANY",
+  "Parent PLUS Loan Debt Males (all)"= "MALE_PP_ANY",
+  "Parent PLUS Loan Debt Not Males (all)" = "NOTMALE_PP_ANY",
+  "Parent PLUS Loan Debt to Pell Recipients (all)"= "PELL_PP_ANY",
+  "Parent PLUS Loan Debt to Non Pell Recipients (all)"= "NOPELL_PP_ANY",
+  "Parent PLUS Loan Debt (this)"= "ALL_PP_EVAL",
+  "Parent PLUS Loan Debt Males (this)" = "MALE_PP_EVAL",
+  "Parent PLUS Loan Debt Not Males (this)"= "NOTMALE_PP_EVAL",
+  "Parent PLUS Loan Debt to Pell Recipients (this)"= "PELL_PP_EVAL",
+  "Parent PLUS Loan Debt to Non Pell Recipients (this)"= "NOPELL_PP_EVAL",
+  "Stafford and Grad PLUS Loan Debt (all)" = "ALL_STGP_ANY",
+  "Stafford and Grad PLUS Loan Debt Males (all)"= "MALE_STGP_ANY",
+  "Stafford and Grad PLUS Loan Debt Not Males (all)"= "NOTMALE_STGP_ANY",
+  "Stafford and Grad PLUS Loan Debt to Pell Recipients (all)"= "PELL_STGP_ANY",
+  "Stafford and Grad PLUS Loan Debt to Non Pell Recipients (all)"= "NOPELL_STGP_ANY",
+  "Stafford and Grad PLUS Loan Debt (this)"= "ALL_STGP_EVAL",
+  "Stafford and Grad PLUS Loan Debt Males (this)" = "MALE_STGP_EVAL",
+  "Stafford and Grad PLUS Loan Debt Not Males (this)" = "NOTMALE_STGP_EVAL",
+  "Stafford and Grad PLUS Loan Debt to Pell Recipients (this)" = "PELL_STGP_EVAL",
+  "Stafford and Grad PLUS Loan Debt to Non Pell Recipients (this)" = "NOPELL_STGP_EVAL"
+)
+```
+
+# Student Loan Debt
+
+Info about the context of the problem here.
+
+Choose a school from the drop down list on the left. We'll create an approximate Normal distribution for the amount of student loan debt for graduates using the mean student loan debt and a very rough estimate of the standard deviation in loan debt for students at that institution.
+
+
+```{r, echo=FALSE, cache = FALSE}
+# Define UI for application that draws a histogram
+ui <- fluidPage(
+
+    sidebarLayout(
+        sidebarPanel(
+          selectizeInput("school",
+                         "Institution:",
+                         choices = unique(cohorts_institutions$INSTNM),
+                         selected = unique(cohorts_institutions$INSTNM)[1]),
+          radioButtons("adornment", "Find a Probability or Percentile?",
+                       choices = c("No", "Percentile", "Probability"),
+                       selected = "No"),
+          conditionalPanel('input.adornment == "Percentile"',
+                           numericInput("percentile", "Percentile to find:", value = 0.5, min = 0.001, max = 0.999)),
+          conditionalPanel('input.adornment == "Probability"',
+                           radioButtons("prob_type", "Which type of Probability to Find?", 
+                                        choices = c("Less Than", "Between", "Greater Than"),
+                                        selected = "Less Than"),
+                           conditionalPanel('input.prob_type == "Less Than"', 
+                                            numericInput("less_than", "Upper Value", value = 0)),
+                           conditionalPanel('input.prob_type == "Between"', 
+                                            numericInput("between1", "Lower Value", value = 0),
+                                            numericInput("between2", "Upper Value", value = 1)),
+                           conditionalPanel('input.prob_type == "Greater Than"', 
+                                            numericInput("greater_than", "Lower Value", value = 1))
+                           )
+        ),
+        # Show a plot of the generated distribution
+        mainPanel(
+           plotOutput("norm_approx")
+          )
+    )
+)
+
+# Define server logic required to draw a histogram
+server <- function(session, input, output) {
+
+    filtered_data <- reactive({
+      name_n <- "DEBT_ALL_STGP_ANY_N"
+      name_mean <- "DEBT_ALL_STGP_ANY_MEAN"
+
+      cohorts_institutions %>%
+        select(INSTNM, CONTROL, CIPCODE, CIPDESC, CREDLEV, CREDDESC, DEBT_ALL_STGP_ANY_N, DEBT_ALL_STGP_ANY_MEAN) %>%
+        filter(INSTNM == input$school) %>%
+        mutate(num_debt_n = ifelse(get(name_n) == "PrivacySuppressed", NA, as.numeric(get(name_n))),
+             num_debt_mean = ifelse(get(name_mean) == "PrivacySuppressed", NA, as.numeric(get(name_mean)))
+        )
+    })
+    
+    output$norm_approx <- renderPlot({
+
+      mean <- mean(filtered_data()$num_debt_mean, na.rm = TRUE)
+      sd <- sd(filtered_data()$num_debt_mean, na.rm = TRUE)
+      
+      lower <- mean-4*sd
+      upper <- mean+4*sd
+      x <- seq(lower, upper, length = 1000)
+      
+      plot(x, dnorm(x, mean = mean, sd = sd), xlab= "Loan Debt at Graduation", ylab = "Density", freq = FALSE, type = "l")
+
+    })
+
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
+```
+
+Note the use of the `height` parameter to determine how much vertical space the embedded application should occupy.
+
+You can also use the `shinyApp` function to define an application inline rather then in an external directory.
+
+In all of R code chunks above the `echo = FALSE` attribute is used. This is to prevent the R code within the chunk from rendering in the document alongside the Shiny components.
+
+
+

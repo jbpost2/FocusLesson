@@ -1,0 +1,341 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+# API contact example
+
+From Joey Marshall.
+
+```{r}
+library(tidyverse)
+library(tidycensus)
+```
+
+#API documentation 
+
+<https://www.census.gov/data/developers/data-sets.html>
+
+Household Pulse Survey - since COVID 19, but still being updated. Info about sexuality, food insecurity, etc.
+
+Has microdata via <https://www.census.gov/programs-surveys/household-pulse-survey/datasets.html>
+
+5 year data on ACS has most amount of geography (smallest level of data)
+
+Look at variable list and you can go and search for variables like rent (https://api.census.gov/data/2021/acs/acs5/profile/variables.html)
+
+
+```{r}
+#parse the variables?
+temp <- rvest::read_html("https://api.census.gov/data/2021/acs/acs5/profile/variables.html")
+tab <- rvest::html_table(temp)[[1]][-1, ]
+head(tab)
+```
+
+
+```{r}
+my_key <- "e267f117801b2ef741e54620602b0903c5f4d3c8"
+#rent variable found
+rent <- "DP04_0142PE" #PE means percentage, m is MOE, mm is similar, other is count
+rent_data <- get_acs(variables = rent, 
+        geography = "county", #geometry = T returns the polygon data and allows for maps easily
+        geometry = TRUE,
+        survey = "acs5",
+        show_call = TRUE, 
+        key = my_key) #can add state and other things
+#using API key removes rate limitation\
+hist(rent_data$estimate, breaks = 20, freq = FALSE, xlab = "")
+mean <- mean(rent_data$estimate, na.rm = TRUE)
+sd <- sd(rent_data$estimate, na.rm = TRUE)
+
+lower <- mean-4*sd
+upper <- mean+4*sd
+x <- seq(lower, upper, length = 1000)
+
+lines(x,
+     dnorm(x, mean = mean, sd = sd),
+     type = "l",
+  )
+axis(1, at = mean+(-3:3)*sd, labels = -3:3, line = 3)
+      mtext("Rent Values and Standard Normal Values", side =1, line = 2)
+      mtext("Standard Normal Values", side = 1, line = 5)
+      
+      
+per <- qnorm(0.5, mean = mean, sd = sd)
+segments(x0 = per, x1 = per, y0 = 0, y1 = dnorm(per, mean = mean, sd = sd), lwd = 2)
+xseq <- seq(lower, per, length = 1000)
+polygon(x = c(xseq, rev(xseq)), y = c(dnorm(xseq, mean = mean, sd = sd), rep(0, length(xseq))), col = rgb(red = 0.34, blue = 0.139, green = 0.34, alpha = 0.5))
+      
+#map thing
+rent_data |> mapview::mapview(zcol = "estimate", layer.name = "Median rent as a % of gross income")
+```
+
+```{r}
+total_households <- "DP02_0001E"
+english <- "DP02_0113E"
+
+
+variables <- c(rent, total_households, english)
+rent_data_PA <- get_acs(variables = variables, 
+        geography = "tract", #geometry = T returns the polygon data and allows for maps easily
+        geometry = TRUE,
+        survey = "acs5",
+        state = "PA",
+        show_call = TRUE, 
+        key = my_key)
+
+rent_data_NC <- get_acs(variables = variables, 
+        geography = "county", #geometry = T returns the polygon data and allows for maps easily
+        geometry = TRUE,
+        survey = "acs5",
+        state = "NC",
+        show_call = TRUE, 
+        key = my_key)
+
+rent_data_PANC <- rbind(rent_data_PA %>% mutate(State = "PA"), rent_data_NC%>% mutate(State = "NC")) %>% pivot_wider(names_from = variable, values_from = estimate:moe)
+#estimate of mean can be given by 
+ggplot(rent_data_PANC, aes(x = estimate, fill = State)) + geom_histogram(stat = "density", position = "dodge", alpha = 0.7)
+```
+
+```{r}
+#rent variable found
+language <- "DP02_0112E"
+
+lang_data <- get_acs(variables = language, 
+        geography = "county", #geometry = T returns the polygon data and allows for maps easily
+        geometry = TRUE,
+        survey = "acs5",
+        show_call = TRUE, 
+        key = my_key) #can add state and other things
+
+
+#rent variable found
+households <- "DP02_0001E"
+
+household_data <- get_acs(variables = households, 
+        geography = "county", #geometry = T returns the polygon data and allows for maps easily
+        geometry = TRUE,
+        survey = "acs5",
+        show_call = TRUE, 
+        key = my_key) 
+
+
+combined <- inner_join(x= as.data.frame(lang_data), y = as.data.frame(household_data), by = c("GEOID", "NAME", "geometry"))
+combined <- combined %>% mutate(prop = estimate.x/estimate.y)
+
+#using API key removes rate limitation
+hist(combined$prop)
+
+number <- 1150
+my_choice <- tab$Name[number]
+census_data <- get_acs(variables = my_choice, 
+        geography = "county", #geometry = T returns the polygon data and allows for maps easily
+        geometry = TRUE,
+        survey = "acs5",
+        show_call = TRUE, 
+        key = my_key
+        ) #can add state and other things
+#using API key removes rate limitation
+hist(census_data$estimate, breaks = 20, main = tab$Label[number])
+#map thing
+rent_data |> mapview::mapview(zcol = "estimate", layer.name = "Median rent as a % of gross income")
+
+
+census_data_PA <- get_acs(variables = rent, 
+        geography = "tract", #geometry = T returns the polygon data and allows for maps easily
+        geometry = TRUE,
+        survey = "acs5",
+        show_call = TRUE, 
+        key = my_key,
+        state = "PA"
+        ) #can add state and other things
+census_data_NC <- get_acs(variables = rent, 
+        geography = "tract", #geometry = T returns the polygon data and allows for maps easily
+        geometry = TRUE,
+        survey = "acs5",
+        show_call = TRUE, 
+        key = my_key,
+        state = "NC"
+        ) #can add state and other things
+hist(census_data_PA$estimate, breaks = 20, main = tab$Label[number])
+hist(census_data_NC$estimate, breaks = 20, main = tab$Label[number])
+```
+
+
+```{r}
+#microdata can be found instead via
+#with this we use different data names found on the acs pums data dictionary
+rent <- "RNTP"
+rent_data_micro <- get_pums(
+  variables = rent, 
+  #variables_filter = list(AGEP = 24:35),
+  state = "PA",
+  recode = TRUE,
+  #geometry = TRUE,
+  year = 2022,
+  show_call = TRUE,
+  survey = "acs1",
+  key = my_key
+  )
+# can get weights for finding standard errors via rep_weights = "person" 
+#use these if you are doing public facing stats
+#acs1 is newer data but it hides smaller things
+#acs5 is more inclusive in that way but doesn't show recent trends as well
+
+hist(as.numeric(rent_data_micro$RNTP[rent_data_micro$RNTP != "0"]))
+rent_data_micro |> mapview::mapview(zcol = "RNTP", layer.name = "Median rent as a % of gross income")
+#srvyr has its own glm and lm functions that allows you to put in the design of the survey which is returned with the rep_weights
+```
+
+
+
+
+
+
+
+```{r}
+#variable info
+variables <- read_csv("PUMS_Data_Dictionary_2022.csv", col_names = FALSE)
+
+
+https://api.census.gov/data/2022/acs/acs1/pums/variables.html
+#microdata can be found instead via
+#with this we use different data names found on the acs pums data dictionary
+rent <- "RNTP"
+rent_data_micro <- get_pums(
+  variables = rent, 
+  variables_filter = list(AGEP = 24:35),
+  state = "PA",
+  recode = TRUE,
+  year = 2022,
+  show_call = TRUE,
+  survey = "acs1"
+  )
+# can get weights for finding standard errors via rep_weights = "person" 
+#use these if you are doing public facing stats
+#acs1 is newer data but it hides smaller things
+#acs5 is more inclusive in that way but doesn't show recent trends as well
+
+hist(as.numeric(rent_data_micro$RNTP[rent_data_micro$RNTP != "0"]))
+
+get_pums(variables = "AGEP", state = "VT")
+#srvyr has its own glm and lm functions that allows you to put in the design of the survey which is returned with the rep_weights
+
+
+
+#with this we use different data names found on the acs pums data dictionary
+rent <- "FPARC"
+rent_data_micro <- get_pums(
+  variables = rent, 
+#  variables_filter = list(AGEP = 24:35),
+  state = "NC",
+  recode = TRUE,
+  year = 2022,
+  show_call = TRUE,
+  survey = "acs1",
+  key = my_key
+  )
+hist(as.numeric(rent_data_micro$FPARC[rent_data_micro$FPARC != "0"]))
+
+
+
+############################
+#read in variable info
+pums_raw <- rvest::read_html("https://api.census.gov/data/2022/acs/acs1/pums/variables.html")
+tab <- rvest::html_table(pums_raw)[[1]][-1, ]
+head(tab)
+#now we can grab any "Name" and go from there
+var_to_grab <- tab$Name[5]
+var_to_grab <- "YRBLT"
+var_to_grab
+micro_data <- get_pums(
+  variables = var_to_grab, 
+#  variables_filter = list(AGEP = 24:35),
+  #state = "NC",
+  recode = TRUE,
+  year = 2022,
+  show_call = TRUE,
+  survey = "acs1",
+  key = my_key
+  )
+hist(as.numeric(micro_data[[var_to_grab]]))
+hist(as.numeric(micro_data[[var_to_grab]][micro_data[[var_to_grab]]!="0"]))
+```
+
+
+
+Book at https://walker-data.com/census-r/analyzing-census-microdata.html
+
+```{r}
+library(survey)
+library(srvyr)
+ri_pums_to_model <- get_pums(
+  variables = c("PUMA", "SEX", "MIG",
+                "AGEP", "SCHL", "WAGP", 
+                "COW", "ESR", "MAR", "NOC"),
+  state = "RI",
+  survey = "acs5",
+  year = 2020,
+  rep_weights = "person"
+)
+
+
+
+ri_pums_recoded <- ri_pums_to_model %>%
+  mutate(
+    emp_type = case_when(
+      COW %in% c("1", "2") ~ "private",
+      COW %in% c("3", "4", "5") ~ "public",
+      TRUE ~ "self"
+      ), 
+    child = case_when(
+      NOC > 0 ~ "yes",
+      TRUE ~ "no"
+    ),
+    married = case_when(
+      MAR == 1 ~ "yes",
+      TRUE ~ "no"
+    ),
+    college = case_when(
+      SCHL %in% as.character(21:24) ~ "yes",
+      TRUE ~ "no"
+    ),
+    sex = case_when(
+      SEX == 2 ~ "female",
+      TRUE ~ "male"
+    ),
+    migrated = case_when(
+      MIG == 1 ~ 0,
+      TRUE ~ 1
+    )
+  )
+
+
+ri_model_svy <- ri_pums_recoded %>% 
+  to_survey() %>%
+  filter(
+    ESR == 1,   # civilian employed
+    WAGP > 0,   # earned wages last year
+    AGEP >= 25,
+    AGEP <= 49
+  ) %>%
+  rename(age = AGEP, wages = WAGP)
+```
+
+
+```{r}
+
+metros <-  get_acs(
+  geography = "cbsa",
+  variables = "DP03_0021P",
+  summary_var = "B01003_001",
+  survey = "acs1",
+  year = 2019
+) 
+
+hist(metros$estimate, )
+
+%>%
+  slice_max(summary_est, n = 20)
+```
+
