@@ -7,6 +7,13 @@ all_rent <- readRDS("rent.rds")
 #create state names with abbreviations
 state_abb <- datasets::state.name
 
+#get some default values
+start_data <- all_rent[["Arkansas"]]
+#drop 0 values and find mean/sd
+start_data_rent <- start_data[start_data$estimate!=0, ]$estimate
+start_mean <- round(mean(start_data_rent, na.rm = TRUE))
+start_sd <- round(sd(start_data_rent, na.rm = TRUE))
+
 # Define UI for application that draws a histogram
 ui <- dashboardPage(
       # withMathJax(),
@@ -32,20 +39,20 @@ ui <- dashboardPage(
                                      choices = c("No", "Percentile", "Probability"),
                                      selected = "No"),
                         conditionalPanel("input.adornment == 'Percentile'",
-                                         numericInput("percentile", "Percentile to find:", value = 0.5, min = 0.001, max = 0.999)),
+                                         numericInput("percentile", "Percentile to find:", value = 50, min = 1, max = 99, step = 1)),
                         conditionalPanel("input.adornment == 'Probability'",
                                          radioButtons("prob_type", "Which type of Probability to Find?",
                                                       choices = c("Less Than", "Between", "Greater Than"),
                                                       selected = "Less Than"),
                                          conditionalPanel("input.prob_type == 'Less Than'",
-                                                          numericInput("less_than", "Upper Value", value = 0)),
+                                                          numericInput("less_than", "Upper Value", value = start_mean)),
                                          conditionalPanel("input.prob_type == 'Between'",
-                                                          numericInput("between1", "Lower Value", value = 0),
-                                                          numericInput("between2", "Upper Value", value = 1)),
+                                                          numericInput("between1", "Lower Value", value = start_mean-1*start_sd),
+                                                          numericInput("between2", "Upper Value", value = start_mean+1*start_sd)),
                                          conditionalPanel("input.prob_type == 'Greater Than'",
-                                                          numericInput("greater_than", "Lower Value", value = 1))
+                                                          numericInput("greater_than", "Lower Value", value = start_mean))
                         ),
-                        "Data comes from the US Census Bureau APS 5 Survey"
+                        "Data courtesy: U.S. Census Bureau. (2022). American Community Survey 5 Year Data (2019-2022). U.S. Department of Commerce. Retrieved January 16, 2024, from https://data.census.gov/"
                       ),
                       # Show a plot of the generated distribution
                       mainPanel(
@@ -93,20 +100,20 @@ ui <- dashboardPage(
                                               choices = c("No", "Percentile", "Probability"),
                                               selected = "No"),
                                  conditionalPanel("input.adornment_comp_1st == 'Percentile'",
-                                                  numericInput("percentile_comp_1st", "Percentile to find:", value = 0.5, min = 0.001, max = 0.999)),
+                                                  numericInput("percentile_comp_1st", "Percentile to find:", value = 50, min = 1, max = 99, step = 1)),
                                  conditionalPanel("input.adornment_comp_1st == 'Probability'",
                                                   radioButtons("prob_type_comp_1st", "Which type of Probability to Find?",
                                                                choices = c("Less Than", "Between", "Greater Than"),
                                                                selected = "Less Than"),
                                                   conditionalPanel("input.prob_type_comp_1st == 'Less Than'",
-                                                                   numericInput("less_than_comp_1st", "Upper Value", value = 0)
+                                                                   numericInput("less_than_comp_1st", "Upper Value", value = start_mean)
                                                   ),
                                                   conditionalPanel("input.prob_type_comp_1st == 'Between'",
-                                                                   numericInput("between1_comp_1st", "Lower Value", value = 0),
-                                                                   numericInput("between2_comp_1st", "Upper Value", value = 1)
+                                                                   numericInput("between1_comp_1st", "Lower Value", value = start_mean-1*start_sd),
+                                                                   numericInput("between2_comp_1st", "Upper Value", value = start_mean+1*start_sd)
                                                   ),
                                                   conditionalPanel("input.prob_type_comp_1st == 'Greater Than'",
-                                                                   numericInput("greater_than_comp_1st", "Lower Value", value = 1)
+                                                                   numericInput("greater_than_comp_1st", "Lower Value", value = start_mean)
                                                   )
                                  )
                           ),
@@ -115,25 +122,25 @@ ui <- dashboardPage(
                                               choices = c("No", "Percentile", "Probability"),
                                               selected = "No"),
                                  conditionalPanel("input.adornment_comp_2nd == 'Percentile'",
-                                                  numericInput("percentile_comp_2nd", "Percentile to find:", value = 0.5, min = 0.001, max = 0.999)),
+                                                  numericInput("percentile_comp_2nd", "Percentile to find:", value = 50, min = 1, max = 99, step = 1)),
                                  conditionalPanel("input.adornment_comp_2nd == 'Probability'",
                                                   radioButtons("prob_type_comp_2nd", "Which type of Probability to Find?",
                                                                choices = c("Less Than", "Between", "Greater Than"),
                                                                selected = "Less Than"),
                                                   conditionalPanel("input.prob_type_comp_2nd == 'Less Than'",
-                                                                   numericInput("less_than_comp_2nd", "Upper Value", value = 0)
+                                                                   numericInput("less_than_comp_2nd", "Upper Value", value = start_mean)
                                                   ),
                                                   conditionalPanel("input.prob_type_comp_2nd == 'Between'",
-                                                                   numericInput("between1_comp_2nd", "Lower Value", value = 0),
-                                                                   numericInput("between2_comp_2nd", "Upper Value", value = 1)
+                                                                   numericInput("between1_comp_2nd", "Lower Value", value = start_mean-1*start_sd),
+                                                                   numericInput("between2_comp_2nd", "Upper Value", value = start_mean+1*start_sd)
                                                   ),
                                                   conditionalPanel("input.prob_type_comp_2nd == 'Greater Than'",
-                                                                   numericInput("greater_than_comp_2nd", "Lower Value", value = 1)
+                                                                   numericInput("greater_than_comp_2nd", "Lower Value", value = start_mean)
                                                   )
                                  )
                           )
                         ),
-                        "Data comes from the US Census Bureau APS 5 Survey"
+                        "Data courtesy: U.S. Census Bureau. (2022). American Community Survey 5 Year Data (2019-2022). U.S. Department of Commerce. Retrieved January 16, 2024, from https://data.census.gov/"
                       ),
                       # Show a plot of the generated distribution
                       mainPanel(
@@ -222,19 +229,19 @@ server <- function(session, input, output) {
 
       updateNumericInput(session,
                          "percentile",
-                         label = paste0("Percentile to find for ", state, ":"), value = 0.5)
+                         label = paste0("Percentile to find for ", state, ":"))#, value = 0.5)
       updateNumericInput(session,
                          "less_than",
-                         label = paste0("Upper value for ", state, ":"), value = mean)
+                         label = paste0("Upper value for ", state, ":"))#, value = mean)
       updateNumericInput(session,
                          "between1",
-                         label = paste0("Lower value for ", state, ":"), value = quants[1])
+                         label = paste0("Lower value for ", state, ":"))#, value = quants[1])
       updateNumericInput(session,
                          "between2",
-                         label = paste0("Upper value for ", state, ":"), value = quants[2])
+                         label = paste0("Upper value for ", state, ":"))#, value = quants[2])
       updateNumericInput(session,
                          "greater_than",
-                         label = paste0("Lower value for ", state, ":"), value = mean)
+                         label = paste0("Lower value for ", state, ":"))#, value = mean)
     })
 
  
@@ -266,7 +273,7 @@ server <- function(session, input, output) {
       mtext("Rent and Corresponding Standard Normal Values", side =1, line = 2)
       
       if(input$adornment == "Percentile"){
-        per <- qnorm(input$percentile, mean = mean, sd = sd)
+        per <- qnorm(input$percentile/100, mean = mean, sd = sd)
         segments(x0 = per, x1 = per, y0 = 0, y1 = dnorm(per, mean = mean, sd = sd), lwd = 2)
         xseq <- seq(lower, per, length = 1000)
         polygon(x = c(xseq, rev(xseq)), y = c(dnorm(xseq, mean = mean, sd = sd), rep(0, length(xseq))), col = rgb(red = 0.34, blue = 0.139, green = 0.34, alpha = 0.5))
@@ -318,7 +325,7 @@ server <- function(session, input, output) {
       
       if(input$adornment == "Percentile"){
         #percentile
-        paste0("Percentile value = ", round(qnorm(input$percentile)*sd(filtered_data()$estimate, na.rm = TRUE) + mean(filtered_data()$estimate, na.rm = TRUE), 2))
+        paste0(scales::label_ordinal()(as.integer(input$percentile)), " percentile = ", round(qnorm(input$percentile/100)*sd(filtered_data()$estimate, na.rm = TRUE) + mean(filtered_data()$estimate, na.rm = TRUE), 2))
       } else if (input$adornment == "Probability"){
         #prob
         if (input$prob_type == "Less Than"){
@@ -348,9 +355,9 @@ server <- function(session, input, output) {
           tags$br(),
           tags$ul(
             tags$li(paste0(
-              input$percentile,
-              " value from the standard normal is ",
-              round(qnorm(input$percentile), 2)
+              scales::label_ordinal()(as.integer(input$percentile)),
+              " percentile from the standard normal is ",
+              round(qnorm(input$percentile/100), 2)
             )),
             tags$li(
               "Converted to the distribution of rent we use:",
@@ -359,9 +366,9 @@ server <- function(session, input, output) {
               tags$br(),
               tags$code(
                 paste0(
-                  round(qnorm(input$percentile)*sd(filtered_data()$estimate, na.rm = TRUE) + mean(filtered_data()$estimate, na.rm = TRUE), 2),
+                  round(qnorm(input$percentile/100)*sd(filtered_data()$estimate, na.rm = TRUE) + mean(filtered_data()$estimate, na.rm = TRUE), 2),
                   " = ",
-                  round(mean, 2), " + ", round(sd, 2), " * ", round(qnorm(input$percentile), 2)
+                  round(mean, 2), " + ", round(sd, 2), " * ", round(qnorm(input$percentile/100), 2)
                 )
               )
             )
@@ -387,7 +394,7 @@ server <- function(session, input, output) {
             tags$li(
               "Converted to the standard normal distribution we use:",
               tags$br(),
-              tags$code("standardized value = (rent - mean)/(standard deviation"),
+              tags$code("z = (rent - mean)/(standard deviation"),
               tags$br(),
               tags$code(
                 paste0(
@@ -418,7 +425,7 @@ server <- function(session, input, output) {
             tags$li(
               "Converted to the standard normal distribution we use:",
               tags$br(),
-              tags$code("standardized value = (rent - mean)/(standard deviation"),
+              tags$code("z = (rent - mean)/(standard deviation"),
               tags$br(),
               tags$code(
                 paste0(
@@ -456,7 +463,7 @@ server <- function(session, input, output) {
             tags$li(
               "Converted to the standard normal distribution we use:",
               tags$br(),
-              tags$code("standardized value = (rent - mean)/(standard deviation"),
+              tags$code("z = (rent - mean)/(standard deviation"),
               tags$br(),
               tags$code(
                 paste0(
@@ -543,34 +550,34 @@ server <- function(session, input, output) {
       
       updateNumericInput(session,
                          "percentile_comp_1st",
-                         label = paste0("Percentile to find for ", state1, ":"), value = 0.5)
+                         label = paste0("Percentile to find for ", state1, ":"))#, value = 0.5)
       updateNumericInput(session,
                          "percentile_comp_2nd",
-                         label = paste0("Percentile to find for ", state2, ":"), value = 0.5)
+                         label = paste0("Percentile to find for ", state2, ":"))#, value = 0.5)
       updateNumericInput(session,
                          "less_than_comp_1st",
-                         label = paste0("Upper value for ", state1, ":"), value = mean1)
+                         label = paste0("Upper value for ", state1, ":"))#, value = mean1)
       updateNumericInput(session,
                          "less_than_comp_2nd",
-                         label = paste0("Upper value for ", state2, ":"), value = mean2)
+                         label = paste0("Upper value for ", state2, ":"))#, value = mean2)
       updateNumericInput(session,
                          "between1_comp_1st",
-                         label = paste0("Lower value for ", state1, ":"), value = quants1[1])
+                         label = paste0("Lower value for ", state1, ":"))#, value = quants1[1])
       updateNumericInput(session,
                          "between2_comp_1st",
-                         label = paste0("Upper value for ", state1, ":"), value = quants1[2])
+                         label = paste0("Upper value for ", state1, ":"))#, value = quants1[2])
       updateNumericInput(session,
                          "between1_comp_2nd",
-                         label = paste0("Lower value for ", state2, ":"), value = quants2[1])
+                         label = paste0("Lower value for ", state2, ":"))#, value = quants2[1])
       updateNumericInput(session,
                          "between2_comp_2nd",
-                         label = paste0("Upper value for ", state2, ":"), value = quants2[2])
+                         label = paste0("Upper value for ", state2, ":"))#, value = quants2[2])
       updateNumericInput(session,
                          "greater_than_comp_1st",
-                         label = paste0("Lower value for ", state1, ":"), value = mean1)
+                         label = paste0("Lower value for ", state1, ":"))#, value = mean1)
       updateNumericInput(session,
                          "greater_than_comp_2nd",
-                         label = paste0("Lower value for ", state2, ":"), value = mean2)
+                         label = paste0("Lower value for ", state2, ":"))#, value = mean2)
     })
     
 
@@ -616,7 +623,7 @@ server <- function(session, input, output) {
       mean <- mean1
       sd <- sd1
       if(input$adornment_comp_1st == "Percentile"){
-        per <- qnorm(input$percentile_comp_1st, mean = mean, sd = sd)
+        per <- qnorm(input$percentile_comp_1st/100, mean = mean, sd = sd)
         segments(x0 = per, x1 = per, y0 = 0, y1 = dnorm(per, mean = mean, sd = sd), lwd = 2)
         xseq <- seq(lower, per, length = 1000)
         polygon(x = c(xseq, rev(xseq)), y = c(dnorm(xseq, mean = mean, sd = sd), rep(0, length(xseq))), col = rgb(red = 0.34, blue = 0.139, green = 0.34, alpha = 0.5))
@@ -684,7 +691,7 @@ server <- function(session, input, output) {
       mean <- mean2
       sd <- sd2
       if(input$adornment_comp_2nd == "Percentile"){
-        per <- qnorm(input$percentile_comp_2nd, mean = mean, sd = sd)
+        per <- qnorm(input$percentile_comp_2nd/100, mean = mean, sd = sd)
         segments(x0 = per, x1 = per, y0 = 0, y1 = dnorm(per, mean = mean, sd = sd), lwd = 2)
         xseq <- seq(lower, per, length = 1000)
         polygon(x = c(xseq, rev(xseq)), y = c(dnorm(xseq, mean = mean, sd = sd), rep(0, length(xseq))), col = rgb(red = 0.34, blue = 0.139, green = 0.34, alpha = 0.5))
@@ -758,9 +765,9 @@ server <- function(session, input, output) {
         tags$br(),
         tags$ul(
           tags$li(paste0(
-            input$percentile_comp_1st,
-            " value from the standard normal is ",
-            round(qnorm(input$percentile_comp_1st), 2)
+            scales::label_ordinal()(as.integer(input$percentile_comp_1st)),
+            " percentile from the standard normal is ",
+            round(qnorm(input$percentile_comp_1st/100), 2)
           )),
           tags$li(
             "Converted to the distribution of rent we use:",
@@ -769,9 +776,9 @@ server <- function(session, input, output) {
             tags$br(),
             tags$code(
               paste0(
-                round(qnorm(input$percentile_comp_1st)*sd + mean, 2),
+                round(qnorm(input$percentile_comp_1st/100)*sd + mean, 2),
                 " = ",
-                round(mean, 2), " + ", round(sd, 2), " * ", round(qnorm(input$percentile_comp_1st), 2)
+                round(mean, 2), " + ", round(sd, 2), " * ", round(qnorm(input$percentile_comp_1st/100), 2)
               )
             )
           )
@@ -795,9 +802,9 @@ server <- function(session, input, output) {
         tags$br(),
         tags$ul(
           tags$li(paste0(
-            input$percentile_comp_2nd,
-            " value from the standard normal is ",
-            round(qnorm(input$percentile_comp_2nd), 2)
+            scales::label_ordinal()(as.integer(input$percentile_comp_2nd)),
+            " percentile from the standard normal is ",
+            round(qnorm(input$percentile_comp_2nd/100), 2)
           )),
           tags$li(
             "Converted to the distribution of rent we use:",
@@ -806,9 +813,9 @@ server <- function(session, input, output) {
             tags$br(),
             tags$code(
               paste0(
-                round(qnorm(input$percentile_comp_2nd)*sd + mean, 2),
+                round(qnorm(input$percentile_comp_2nd/100)*sd + mean, 2),
                 " = ",
-                round(mean, 2), " + ", round(sd, 2), " * ", round(qnorm(input$percentile_comp_2nd), 2)
+                round(mean, 2), " + ", round(sd, 2), " * ", round(qnorm(input$percentile_comp_2nd/100), 2)
               )
             )
           )
@@ -840,7 +847,7 @@ server <- function(session, input, output) {
             tags$li(
               "Converted to the standard normal distribution we use:",
               tags$br(),
-              tags$code("standardized value = (rent - mean)/(standard deviation"),
+              tags$code("z = (rent - mean)/(standard deviation"),
               tags$br(),
               tags$code(
                 paste0(
@@ -871,7 +878,7 @@ server <- function(session, input, output) {
             tags$li(
               "Converted to the standard normal distribution we use:",
               tags$br(),
-              tags$code("standardized value = (rent - mean)/(standard deviation"),
+              tags$code("z = (rent - mean)/(standard deviation"),
               tags$br(),
               tags$code(
                 paste0(
@@ -909,7 +916,7 @@ server <- function(session, input, output) {
             tags$li(
               "Converted to the standard normal distribution we use:",
               tags$br(),
-              tags$code("standardized value = (rent - mean)/(standard deviation"),
+              tags$code("z = (rent - mean)/(standard deviation"),
               tags$br(),
               tags$code(
                 paste0(
@@ -953,7 +960,7 @@ server <- function(session, input, output) {
             tags$li(
               "Converted to the standard normal distribution we use:",
               tags$br(),
-              tags$code("standardized value = (rent - mean)/(standard deviation"),
+              tags$code("z = (rent - mean)/(standard deviation"),
               tags$br(),
               tags$code(
                 paste0(
@@ -984,7 +991,7 @@ server <- function(session, input, output) {
             tags$li(
               "Converted to the standard normal distribution we use:",
               tags$br(),
-              tags$code("standardized value = (rent - mean)/(standard deviation"),
+              tags$code("z = (rent - mean)/(standard deviation"),
               tags$br(),
               tags$code(
                 paste0(
@@ -1022,7 +1029,7 @@ server <- function(session, input, output) {
             tags$li(
               "Converted to the standard normal distribution we use:",
               tags$br(),
-              tags$code("standardized value = (rent - mean)/(standard deviation"),
+              tags$code("z = (rent - mean)/(standard deviation"),
               tags$br(),
               tags$code(
                 paste0(
@@ -1053,7 +1060,7 @@ server <- function(session, input, output) {
       
       if(input$adornment_comp_1st == "Percentile"){
         #percentile
-        paste0("Percentile value = ", round(qnorm(input$percentile_comp_1st)*sd + mean, 2))
+        paste0(scales::label_ordinal()(as.integer(input$percentile_comp_1st)), " percentile = ", round(qnorm(input$percentile_comp_1st/100)*sd + mean, 2))
       } else if (input$adornment_comp_1st == "Probability"){
         #prob
         if (input$prob_type_comp_1st == "Less Than"){
@@ -1083,7 +1090,7 @@ server <- function(session, input, output) {
       
       if(input$adornment_comp_2nd == "Percentile"){
         #percentile
-        paste0("Percentile value = ", round(qnorm(input$percentile_comp_2nd)*sd + mean, 2))
+        paste0(scales::label_ordinal()(as.integer(input$percentile_comp_2nd)), " percentile = ", round(qnorm(input$percentile_comp_2nd/100)*sd + mean, 2))
       } else if (input$adornment_comp_2nd == "Probability"){
         #prob
         if (input$prob_type_comp_2nd == "Less Than"){
