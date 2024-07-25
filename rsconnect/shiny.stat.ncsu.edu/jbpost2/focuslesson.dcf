@@ -1,0 +1,13 @@
+name: focuslesson
+title: FocusLesson
+username: jbpost2
+account: jbpost2
+server: shiny.stat.ncsu.edu
+hostUrl: https://shiny.stat.ncsu.edu/__api__
+appId: 17
+bundleId: 30
+url: https://shiny.stat.ncsu.edu/content/d7dd4c94-7790-4f71-9a85-bc5b79a0f6ed/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: ACS_data_example.html|ACS_data_example.Rmd|app - Explores Histograms.R|app - Scorecard data (old).R|app_new_census_only_1_var.R|app_prior_to_census_data.R|app_prior_to_downloading_data_locally.R|app_prior_to_maps.R|appold.R|cohorts_field_of_study.rds|cohorts_institutions.rds|cohorts_majors.rds|cost_benefit.R|gamma-arrivals.csv|institutions.rds|majors.rds|Most-Recent-Cohorts-Field-of-Study.csv|Most-Recent-Cohorts-Institution.csv|PUMS_Data_Dictionary_2022.csv|read_data.RData|ZScoreActivity.Rmd
