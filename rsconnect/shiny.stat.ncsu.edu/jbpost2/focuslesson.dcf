@@ -5,7 +5,7 @@ account: jbpost2
 server: shiny.stat.ncsu.edu
 hostUrl: https://shiny.stat.ncsu.edu/__api__
 appId: 17
-bundleId: 30
+bundleId: 120
 url: https://shiny.stat.ncsu.edu/content/d7dd4c94-7790-4f71-9a85-bc5b79a0f6ed/
 version: 1
 asMultiple: FALSE
