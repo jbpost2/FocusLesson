@@ -31,7 +31,7 @@ ui <- dashboardPage(
                     titlePanel("Z-Score Exploration"),
                     sidebarLayout(
                       sidebarPanel(
-                        p("Choose the state below to obtain data about the percentage of income that goes towards rent. Downloaded data is the average for each census tract within the chosen state."),
+                        p("Choose the state below to obtain data about the percentage of income that goes towards rent. Downloaded data is the median for each census tract within the chosen state."),
                         selectizeInput("state",
                                        "State:",
                                        choices = state_abb,
@@ -88,7 +88,7 @@ ui <- dashboardPage(
                     titlePanel("Comparing Two Distributions"),
                     sidebarLayout(
                       sidebarPanel(
-                        p("Choose states below to obtain data about the percentage of income that goes towards rent. Downloaded data is the average for each census tract within the chosen states."),
+                        p("Choose states below to obtain data about the percentage of income that goes towards rent. Downloaded data is the median for each census tract within the chosen states."),
                         selectizeInput("state1",
                                        "First State:",
                                        choices = state_abb,
