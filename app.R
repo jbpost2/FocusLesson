@@ -53,7 +53,9 @@ ui <- dashboardPage(
                                          conditionalPanel("input.prob_type == 'Greater Than'",
                                                           numericInput("greater_than", "Lower Value", value = start_mean))
                         ),
-                        "Data courtesy: U.S. Census Bureau. (2022). American Community Survey 5 Year Data (2019-2022). U.S. Department of Commerce. Retrieved January 16, 2024, from https://data.census.gov/"
+                        "Data courtesy: U.S. Census Bureau. (2022). American Community Survey 5 Year Data (2019-2022). U.S. Department of Commerce. Retrieved January 16, 2024, from https://data.census.gov/",
+                        br(),
+                        "Values above 50 were labeled as 50+ by the census burea. These have been removed from all datasets."
                       ),
                       # Show a plot of the generated distribution
                       mainPanel(

@@ -18,11 +18,17 @@ all_rent <- lapply(X = state_abb, FUN = function(x){
           survey = "acs5",
           show_call = TRUE, 
           state = x,
+          year = 2022,
           key = my_key)
 })
 
 names(all_rent)<- state_abb
 
+#change 51 values to NA
+all_rent <- lapply(all_rent,
+                   FUN = function(x){
+                     x |> mutate(estimate = ifelse(estimate == 51, NA, estimate))
+                   })
 saveRDS(all_rent, file = 'rent.rds')
 
 
